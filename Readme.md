@@ -222,8 +222,111 @@ execution delay: max=20 happened at 511 seconds ago
 Keepalive thread:
 Timer: pending 1, added 17279, expired 14730, deleted 2548
 
+Now we will do summrization of the 10K static routes on FG vm. The summrization IP address should be 8.0.0.0/8.
+you can check the link below for more info.
 
+JVHARS-FGT-A # config router bgp 
 
+JVHARS-FGT-A (bgp) # show
+config router bgp
+    set as 65005
+    set keepalive-timer 1
+    set holdtime-timer 3
+    set ebgp-multipath enable
+    set graceful-restart enable
+    config aggregate-address
+        edit 1
+            set prefix 8.0.0.0 255.0.0.0
+            set summary-only enable
+        next
+    end
+    config neighbor
+        edit "172.16.150.68"
+            set capability-default-originate enable
+            set ebgp-enforce-multihop enable
+            set soft-reconfiguration enable
+            set interface "port2"
+            set remote-as 65515
+        next
+        edit "172.16.150.69"
+            set capability-default-originate enable
+            set ebgp-enforce-multihop enable
+            set soft-reconfiguration enable
+            set interface "port2"
+            set remote-as 65515
+        next
+        edit "169.254.2.10"
+            set interface "ARSAzure"
+            set remote-as 65004
+        next
+    end
+    config network
+        edit 1
+            set prefix 8.0.0.0 255.0.0.0
+        next
+    end
+    config network6
+        edit 1
+            set prefix6 ::/128
+        next
+    end
+    config redistribute "connected"
+    end
+    config redistribute "rip"
+    end
+    config redistribute "ospf"
+    end
+    config redistribute "static"
+    end
+    config redistribute "isis"
+    end
+    config redistribute6 "connected"
+    end
+    config redistribute6 "rip"
+    end
+    config redistribute6 "ospf"
+    end
+    config redistribute6 "static"
+    end
+    config redistribute6 "isis"
+    end
+end
 
+After that we will verify the advertised routes to ARS through the following command:
+
+JVHARS-FGT-A # get router info bgp neighbors 172.16.150.68 advertised-routes
+VRF 0 BGP table version is 4, local router ID is 172.16.150.20
+Status codes: s suppressed, d damped, h history, * valid, > best, i - internal
+Origin codes: i - IGP, e - EGP, ? - incomplete
+
+   Network          Next Hop            Metric LocPrf Weight RouteTag Path
+*> 0.0.0.0/0        172.16.150.20                 100  32768        0 i <-/->
+*> 8.0.0.0          172.16.150.20                      32768        0 i <-/->
+
+Total number of prefixes 2
+
+We can see double check also on ARS side
+yaser@Azure:~$ az network routeserver peering list-learned-routes --resource-group JVHARS-RG --routeserver JVHARS-RouteServer --name BGP1
+{
+  "RouteServiceRole_IN_0": [
+    {
+      "asPath": "65005",
+      "localAddress": "172.16.150.68",
+      "network": "0.0.0.0/0",
+      "nextHop": "172.16.150.20",
+      "origin": "EBgp",
+      "sourcePeer": "172.16.150.20",
+      "weight": 32768
+    },
+    {
+      "asPath": "65005",
+      "localAddress": "172.16.150.68",
+      "network": "8.0.0.0/8",
+      "nextHop": "172.16.150.20",
+      "origin": "EBgp",
+      "sourcePeer": "172.16.150.20",
+      "weight": 32768
+    }
+  ],
 
 ![active/passive design](Images/ASR_Cli.PNG)

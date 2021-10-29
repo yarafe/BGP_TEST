@@ -1,2 +1,2 @@
 ###BGP Test
-![active/passive design](images/ASR_Cli.png)
+![active/passive design](ASR_Cli.png)

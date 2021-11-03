@@ -329,4 +329,4 @@ yaser@Azure:~$ az network routeserver peering list-learned-routes --resource-gro
     }
   ],
 
-![active/passive design](Images/ASR_Cli.PNG)
+![ARS_learned_routes](Images/ASR_Cli.PNG)
